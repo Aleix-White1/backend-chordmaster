@@ -22,6 +22,7 @@ class UserRegisterResponse(BaseModel):
     email: str
     created_at: datetime
     access_token: str
+    refresh_token: str
     token_type: str
     
     class Config:
@@ -32,5 +33,13 @@ class UserLogin(BaseModel):
     password: str
 
 class Token(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+class TokenRefresh(BaseModel):
+    refresh_token: str
+
+class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str

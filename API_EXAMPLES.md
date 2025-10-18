@@ -20,6 +20,7 @@
     "email": "juan@ejemplo.com",
     "created_at": "2025-10-06T10:30:00",
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "mF_9.B5f-4.1JqM...",
     "token_type": "bearer"
 }
 ```
@@ -46,6 +47,7 @@
 ```json
 {
     "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "mF_9.B5f-4.1JqM...",
     "token_type": "bearer"
 }
 ```
@@ -54,6 +56,78 @@
 ```json
 {
     "detail": "Email o contraseña incorrectos"
+}
+```
+
+## 3. Renovar token de acceso
+
+### Endpoint: POST /api/auth/refresh
+
+```json
+{
+    "refresh_token": "mF_9.B5f-4.1JqM..."
+}
+```
+
+### Respuesta exitosa:
+```json
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer"
+}
+```
+
+### Respuesta de error:
+```json
+{
+    "detail": "Refresh token inválido o expirado"
+}
+```
+
+## 4. Cerrar sesión
+
+### Endpoint: POST /api/auth/logout
+
+```json
+{
+    "refresh_token": "mF_9.B5f-4.1JqM..."
+}
+```
+
+### Respuesta exitosa:
+```json
+{
+    "message": "Logout exitoso"
+}
+```
+
+## 5. Cerrar sesión en todos los dispositivos
+
+### Endpoint: POST /api/auth/logout-all
+
+```json
+{
+    "refresh_token": "mF_9.B5f-4.1JqM..."
+}
+```
+
+### Respuesta exitosa:
+```json
+{
+    "message": "Logout exitoso en todos los dispositivos"
+}
+```
+
+## 6. Crear tablas (solo desarrollo)
+
+### Endpoint: POST /api/auth/create-tables
+
+Sin parámetros necesarios.
+
+### Respuesta exitosa:
+```json
+{
+    "message": "Tablas creadas exitosamente"
 }
 ```
 

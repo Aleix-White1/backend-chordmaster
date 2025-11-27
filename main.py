@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import router as auth_router
+from app.auth_routes import router as auth_router
+from app.analize_routes import router as analize_router
 
 app = FastAPI(title="ChordMaster Backend", version="1.0.0")
 
@@ -14,6 +15,5 @@ app.add_middleware(
 
 app.include_router(auth_router, prefix="/api/auth", tags=["authentication"])
 
-@app.get("/")
-def read_root():
-    return {"message": "Backend: Hola mundo! "}
+app.include_router(analize_router, prefix="/api/analyze", tags=["analyze"])
+

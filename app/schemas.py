@@ -1,6 +1,5 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import Optional
 
 class UserRegister(BaseModel):
     name: str
@@ -35,6 +34,7 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     refresh_token: str
+    name: str
     token_type: str
 
 class TokenRefresh(BaseModel):
@@ -43,3 +43,25 @@ class TokenRefresh(BaseModel):
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+class AnalyzeLinkRequest(BaseModel):
+    youtube_url: str
+    
+class AnalyzeFileRequest(BaseModel):
+    file: bytes
+
+class ChordsResponse(BaseModel):
+    prevChord: str | None
+    nextChord: str | None
+    start_time: float
+    end_time: float
+    chord: str
+    
+class AnalyzeResponse(BaseModel):
+    job_id: str
+    analysis: dict = {
+        "tempo_bpm": float,
+        "key": str,
+        "chords": list[ChordsResponse]
+    }
+    _lyrics: str | None = None

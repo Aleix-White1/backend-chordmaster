@@ -37,7 +37,7 @@ async def register_user(user_data: UserRegister, db: Session = Depends(get_db)):
         # Crear el token de acceso para el nuevo usuario
         access_token_expires = timedelta(minutes=30)
         access_token = create_access_token(
-            data={"sub": new_user.email}, expires_delta=access_token_expires
+            data={"sub": new_user.email, "user_id": new_user.id}, expires_delta=access_token_expires
         )
         
         # Crear el refresh token
@@ -101,7 +101,7 @@ async def login_user(user_credentials: UserLogin, db: Session = Depends(get_db))
         # Crear el token de acceso
         access_token_expires = timedelta(minutes=30)
         access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
+            data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
         )
         
         # Crear el refresh token
@@ -178,7 +178,7 @@ async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(g
         # Crear un nuevo access token
         access_token_expires = timedelta(minutes=30)
         access_token = create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
+            data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
         )
         
         return {

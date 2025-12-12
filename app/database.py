@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Float, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, timezone
@@ -35,6 +35,28 @@ class RefreshToken(Base):
     
     # Relación con usuario
     user = relationship("User", back_populates="refresh_tokens")
+
+# Modelo de Historial de Canciones
+class SongHistory(Base):
+    __tablename__ = "song_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(36), nullable=False, unique=True)  # Campo requerido en la tabla
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(500), nullable=False)
+    source = Column(String(50), nullable=False, default="youtube")  # Campo requerido
+    youtube_url = Column(String(500), nullable=True)
+    tempo_bpm = Column(Float, nullable=True)  # Float en lugar de Integer
+    key = Column(String(20), nullable=True)  # Campo original
+    key_detected = Column(String(20), nullable=True)  # Campo agregado
+    mode_detected = Column(String(20), nullable=True)  # Campo agregado
+    beats_per_bar = Column(Integer, nullable=True)  # Campo existente
+    chords = Column(JSON, nullable=True)  # Campo original
+    chords_json = Column(JSON, nullable=True)  # Campo agregado
+    analyzed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Relación con usuario
+    user = relationship("User")
 
 # Función para obtener la sesión de la base de datos
 def get_db():

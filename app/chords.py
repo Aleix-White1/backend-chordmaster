@@ -16,4 +16,4 @@ CHORD_TYPES = [
 ALL_CHORDS = [root + chord for root in ROOTS for chord in CHORD_TYPES]
 
 if __name__ == "__main__":
-    print(ALL_CHORDS)
+    pass

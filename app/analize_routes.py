@@ -457,8 +457,6 @@ async def analyze_link(
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        print(f"Error en analyze_link: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error procesando enlace: {str(e)}")
 
 
@@ -520,8 +518,6 @@ async def analyze_file(
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        print(f"Error en analyze_file: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
 
 

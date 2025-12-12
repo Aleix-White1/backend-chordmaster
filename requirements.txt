@@ -10,7 +10,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
 
-# Database (PostgreSQL for production, keep MySQL for local dev)
+# Database (PostgreSQL for production, MySQL for dev, SQLite fallback)
 SQLAlchemy==2.0.36
 psycopg2-binary==2.9.9
 mysql-connector-python==9.1.0

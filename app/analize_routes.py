@@ -451,8 +451,9 @@ async def analyze_link(
 
         return {
             "job_id": job_id,
-            "analysis": result
-        }
+            "analysis": result,
+            "title": title
+        } 
     except HTTPException:
         raise
     except Exception as e:

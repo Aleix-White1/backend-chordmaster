@@ -64,4 +64,4 @@ class AnalyzeResponse(BaseModel):
         "key": str,
         "chords": list[ChordsResponse]
     }
-    _lyrics: str | None = None
+    title: str

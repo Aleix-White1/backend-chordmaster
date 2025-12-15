@@ -39,6 +39,7 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET", "chordmaster_secret_key_2025_developmen
 CORS_ORIGINS = [
     "http://localhost:3000",  # React local
     "http://localhost:3001",  # React alternativo
+    "http://localhost:4200",  # Angular local
     "https://chordmaster-frontend.vercel.app",  # Frontend en Vercel
 ]
 

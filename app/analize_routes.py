@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.schemas import AnalyzeLinkRequest, AnalyzeResponse
 from app.config import JWT_SECRET_KEY
 from app.database import get_db, SongHistory
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from scipy.ndimage import median_filter, gaussian_filter1d
 from scipy.signal import correlate, medfilt
 from music21 import key as m21key, chord as m21chord, roman, pitch as m21pitch, stream
@@ -433,6 +433,10 @@ async def analyze_link(
 
         # Analizar
         result = analyze_audio_advanced(wav_path)
+        
+        # Leer archivo WAV para almacenarlo en BD
+        with open(wav_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
 
         # Guardar en historial
         song_entry = SongHistory(
@@ -444,7 +448,8 @@ async def analyze_link(
             tempo_bpm=result["tempo_bpm"],  # Float, no convertir a int
             key_detected=result["key"],
             mode_detected=result["mode"],
-            chords_json=json.dumps(result["chords"])
+            chords_json=json.dumps(result["chords"]),
+            audio_data=audio_data
         )
         db.add(song_entry)
         db.commit()
@@ -495,6 +500,10 @@ async def analyze_file(
 
         # Analizar
         result = analyze_audio_advanced(wav_path)
+        
+        # Leer archivo WAV para almacenarlo en BD
+        with open(wav_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
 
         # Guardar en historial
         song_entry = SongHistory(
@@ -506,7 +515,8 @@ async def analyze_file(
             tempo_bpm=result["tempo_bpm"],  # Float, no convertir a int
             key_detected=result["key"],
             mode_detected=result["mode"],
-            chords_json=json.dumps(result["chords"])
+            chords_json=json.dumps(result["chords"]),
+            audio_data=audio_data
         )
         db.add(song_entry)
         db.commit()
@@ -629,13 +639,21 @@ async def get_analyzed_audio(
     db: Session = Depends(get_db)
 ):
     """Devuelve el archivo WAV analizado para el job_id dado"""
+    print(f"🎵 Solicitando audio para job_id: {job_id}")
+    
     # Verificar autenticación JWT
     if not credentials:
+        print(f"❌ Sin token de autenticación para job_id: {job_id}")
         raise HTTPException(status_code=401, detail="Token de autenticación requerido")
     
     token = credentials.credentials
-    payload = verify_token(token)
-    user_id = payload.get("user_id")
+    try:
+        payload = verify_token(token)
+        user_id = payload.get("user_id")
+        print(f"✅ Usuario autenticado: {user_id} para job_id: {job_id}")
+    except Exception as e:
+        print(f"❌ Error verificando token: {e}")
+        raise HTTPException(status_code=401, detail="Token inválido")
     
     if not user_id:
         raise HTTPException(status_code=401, detail="Token inválido: user_id no encontrado")
@@ -647,14 +665,21 @@ async def get_analyzed_audio(
     ).first()
     
     if not song:
-        raise HTTPException(status_code=403, detail="No tienes acceso a este audio")
+        print(f"❌ No hay acceso al job_id {job_id} para usuario {user_id}")
+        raise HTTPException(status_code=403, detail="No tienes acceso a este audio o el análisis no existe")
     
-    # Buscar el directorio del job
-    jobs_dir = os.path.join(os.path.dirname(__file__), "../jobs")
-    job_dir = os.path.join(jobs_dir, job_id)
-    audio_path = os.path.join(job_dir, AUDIO_FILENAME)
+    print(f"✅ Acceso confirmado para job_id: {job_id}, título: {song.title}")
     
-    if not os.path.exists(audio_path):
-        raise HTTPException(status_code=404, detail="Audio no encontrado para ese job_id")
+    # Verificar que el audio existe en la base de datos
+    if not song.audio_data:
+        print(f"❌ No hay datos de audio almacenados para job_id: {job_id}")
+        raise HTTPException(status_code=404, detail=f"Archivo de audio no encontrado para el análisis: {job_id}")
     
-    return FileResponse(audio_path, media_type="audio/wav")
+    print(f"✅ Sirviendo audio desde BD para job_id: {job_id}, tamaño: {len(song.audio_data)} bytes")
+    
+    # Devolver el audio como respuesta binaria
+    return Response(
+        content=song.audio_data,
+        media_type="audio/wav",
+        headers={"Content-Disposition": f"inline; filename=\"{job_id}.wav\""}
+    )

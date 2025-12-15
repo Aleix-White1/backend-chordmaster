@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Float, JSON
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Float, JSON, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, timezone
@@ -53,6 +53,7 @@ class SongHistory(Base):
     beats_per_bar = Column(Integer, nullable=True)  # Campo existente
     chords = Column(JSON, nullable=True)  # Campo original
     chords_json = Column(JSON, nullable=True)  # Campo agregado
+    audio_data = Column(LargeBinary, nullable=True)  # Almacenar archivo de audio
     analyzed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relación con usuario

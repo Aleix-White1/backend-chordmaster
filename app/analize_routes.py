@@ -371,11 +371,16 @@ def convert_to_wav(input_path: str, output_path: str):
     ]
 
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error convirtiendo a WAV: {e.stderr.decode()}"
+        )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=500,
+            detail="FFmpeg no está instalado. Por favor instala FFmpeg para convertir archivos de audio."
         )
 
 
@@ -491,6 +496,7 @@ async def analyze_file(
         # Guardar archivo subido
         upload_path = os.path.join(job_dir, f"upload_{file.filename}")
         content = await file.read()
+        
         with open(upload_path, "wb") as f:
             f.write(content)
 
@@ -505,14 +511,17 @@ async def analyze_file(
         with open(wav_path, 'rb') as audio_file:
             audio_data = audio_file.read()
 
+        # Obtener título del archivo
+        title = file.filename or "Archivo subido"
+        
         # Guardar en historial
         song_entry = SongHistory(
             job_id=job_id,
             user_id=user_id,
-            title=file.filename or "Archivo subido",
+            title=title,
             source="file",
             youtube_url=None,
-            tempo_bpm=result["tempo_bpm"],  # Float, no convertir a int
+            tempo_bpm=result["tempo_bpm"],
             key_detected=result["key"],
             mode_detected=result["mode"],
             chords_json=json.dumps(result["chords"]),
@@ -523,7 +532,8 @@ async def analyze_file(
 
         return {
             "job_id": job_id,
-            "analysis": result
+            "analysis": result,
+            "title": title
         }
     except HTTPException:
         raise

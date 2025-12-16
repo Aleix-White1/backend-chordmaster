@@ -43,6 +43,10 @@ CORS_ORIGINS = [
     "https://chordmaster-frontend.vercel.app",  # Frontend en Vercel
 ]
 
+# Para desarrollo/testing, permitir todos los orígenes
+if not IS_PRODUCTION:
+    CORS_ORIGINS.append("*")
+
 # En producción, permitir orígenes específicos desde variables de entorno
 if IS_PRODUCTION:
     frontend_url = os.getenv("FRONTEND_URL")

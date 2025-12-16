@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 from app.auth_routes import router as auth_router
 from app.analize_routes import router as analize_router
 from app.config import CORS_ORIGINS, IS_PRODUCTION
+from app.database import create_tables
+import os
 
 app = FastAPI(
     title="ChordMaster Backend", 
@@ -11,6 +13,15 @@ app = FastAPI(
     docs_url="/docs" if not IS_PRODUCTION else None,  # Ocultar docs en producción
     redoc_url="/redoc" if not IS_PRODUCTION else None
 )
+
+# Inicializar base de datos y directorio jobs al arrancar
+@app.on_event("startup")
+async def startup_event():
+    # Crear tablas de base de datos
+    create_tables()
+    
+    # Crear directorio jobs si no existe
+    os.makedirs("jobs", exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.auth_routes import router as auth_router
 from app.analize_routes import router as analize_router
 from app.config import CORS_ORIGINS, IS_PRODUCTION
@@ -17,7 +18,16 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Error interno del servidor"},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 app.include_router(auth_router, prefix="/api/auth", tags=["authentication"])
 app.include_router(analize_router, prefix="/api/analyze", tags=["analyze"])

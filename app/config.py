@@ -36,15 +36,27 @@ if not DATABASE_URL:
 JWT_SECRET_KEY = os.getenv("JWT_SECRET", "chordmaster_secret_key_2025_development")
 
 # CORS origins
-CORS_ORIGINS = [
-    "http://localhost:3000",  # React local
-    "http://localhost:3001",  # React alternativo
-    "http://localhost:4200",  # Angular local
-    "https://chordmaster-frontend.vercel.app",  # Frontend en Vercel
-]
-
-# En producción, permitir orígenes específicos desde variables de entorno
 if IS_PRODUCTION:
+    # En producción: orígenes específicos y seguros
+    CORS_ORIGINS = [
+        "https://chordmaster-frontend.vercel.app",  # Frontend en Vercel
+    ]
+    # Agregar URL del frontend desde variables de entorno
     frontend_url = os.getenv("FRONTEND_URL")
     if frontend_url:
         CORS_ORIGINS.append(frontend_url)
+else:
+    # En desarrollo: permitir localhost y redes locales
+    CORS_ORIGINS = [
+        "http://localhost",       # Localhost sin puerto (importante para emuladores)
+        "http://localhost:3000",  # React local
+        "http://localhost:3001",  # React alternativo  
+        "http://localhost:4200",  # Angular local
+        "http://127.0.0.1:3000",  # Localhost explícito
+        "http://127.0.0.1:4200",  # Angular localhost explícito
+        # Permitir toda la red local para desarrollo y emuladores
+        "http://192.168.1.192:4200",  # IP específica del emulador
+        "capacitor://localhost",  # Ionic/Capacitor
+        "ionic://localhost",      # Ionic
+        "http://ionic.local",     # Ionic local
+    ]

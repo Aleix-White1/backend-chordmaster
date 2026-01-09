@@ -261,66 +261,114 @@ def download_audio(youtube_url: str, output_dir: str) -> str:
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, AUDIO_WEBM)
 
-    # Comando actualizado para compatibilidad con restricciones de YouTube (dic 2025)
-    cmd = [
-        "yt-dlp",
-        "--no-check-certificate",
-        "--no-playlist",
-        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "--extractor-args", "youtube:player_client=web",
-        "-f", "bestaudio/best",
-        "--extract-audio",
-        "--audio-format", "best",
-        "-o", output_path,
-        youtube_url,
-    ]
-
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=180
-        )
-    except subprocess.TimeoutExpired:
-        raise HTTPException(
-            status_code=408,
-            detail="Tiempo de descarga excedido. El video es demasiado largo o la conexión es lenta."
-        )
-
-    # Si falla, intentar configuración alternativa
-    if result.returncode != 0:
-        cmd_fallback = [
+    # Estrategias mejoradas para la nueva versión de YouTube (enero 2026)
+    strategies = [
+        # Estrategia 1: Cliente Android (más compatible con nuevas restricciones)
+        [
             "yt-dlp",
             "--no-check-certificate",
             "--no-playlist",
-            "-f", "bestaudio/best",
+            "--user-agent", "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip",
+            "--extractor-args", "youtube:player_client=android",
+            "-f", "18/bestaudio[ext=m4a]/bestaudio/best",
             "--extract-audio",
+            "--audio-format", "best",
+            "--ignore-errors",
+            "--no-warnings",
+            "-o", output_path,
+            youtube_url,
+        ],
+        # Estrategia 2: Cliente Android con formato de audio específico
+        [
+            "yt-dlp",
+            "--no-check-certificate",
+            "--no-playlist",
+            "--user-agent", "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip", 
+            "--extractor-args", "youtube:player_client=android",
+            "-f", "worst[ext=mp4]/worst",
+            "--extract-audio",
+            "--audio-format", "m4a",
+            "--ignore-errors",
+            "-o", output_path,
+            youtube_url,
+        ],
+        # Estrategia 3: Cliente web legacy (sin SABR)
+        [
+            "yt-dlp",
+            "--no-check-certificate",
+            "--no-playlist", 
+            "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "--extractor-args", "youtube:player_client=web",
+            "--extractor-args", "youtube:skip=translated_subs",
+            "-f", "worst/best",
+            "--extract-audio",
+            "--ignore-errors",
+            "-o", output_path,
+            youtube_url,
+        ],
+        # Estrategia 4: Cliente TV embebido (últimos recursos)
+        [
+            "yt-dlp",
+            "--no-check-certificate",
+            "--no-playlist",
+            "--extractor-args", "youtube:player_client=tv_embedded",
+            "-f", "worst",
+            "--extract-audio",
+            "--ignore-errors",
+            "--no-warnings",
             "-o", output_path,
             youtube_url,
         ]
-        
+    ]
+
+    result = None
+    last_stderr = ""
+    successful_strategy = -1
+    
+    # Intentar cada estrategia hasta que una funcione
+    for i, cmd in enumerate(strategies):
         try:
+            print(f"Intentando estrategia {i+1}/4...")
             result = subprocess.run(
-                cmd_fallback,
+                cmd,
                 check=False,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=180
+                timeout=120  # Reducido a 2 minutos por intento
             )
+            
+            if result.returncode == 0:
+                successful_strategy = i + 1
+                print(f"Estrategia {successful_strategy} exitosa")
+                break
+                
+            last_stderr = result.stderr.decode()
+            print(f"Estrategia {i+1} falló: {last_stderr[:100]}...")
+            
         except subprocess.TimeoutExpired:
-            raise HTTPException(
-                status_code=408,
-                detail="Tiempo de descarga excedido."
-            )
+            print(f"Estrategia {i+1} timeout")
+            if i == len(strategies) - 1:  # Último intento
+                raise HTTPException(
+                    status_code=408,
+                    detail="Tiempo de descarga excedido después de múltiples intentos."
+                )
+            continue
+    
+    # Si todas las estrategias fallaron
+    if result is None or result.returncode != 0:
+        if "Only images are available" in last_stderr or "storyboard" in last_stderr:
+            detail_msg = "Este video no tiene audio disponible para descarga. Puede estar completamente bloqueado por YouTube."
+        elif "private" in last_stderr.lower() or "unavailable" in last_stderr.lower():
+            detail_msg = "Este video es privado, no está disponible o ha sido eliminado."
+        elif "age-restricted" in last_stderr.lower():
+            detail_msg = "Este video tiene restricción de edad y no se puede descargar."
+        else:
+            detail_msg = f"No se pudo descargar el audio después de 4 estrategias diferentes. Error: {last_stderr[:150]}..."
         
-        if result.returncode != 0:
-            stderr = result.stderr.decode()
-            raise HTTPException(
-                status_code=400,
-                detail=f"No se pudo descargar el audio. El vídeo puede tener copyright o protección.\nDetalles: {stderr}"
-            )
+        raise HTTPException(
+            status_code=400,
+            detail=detail_msg
+        )
 
     # Buscar archivo descargado
     possible_extensions = ['.webm', '.m4a', '.mp3', '.opus', '.ogg', '.wav']

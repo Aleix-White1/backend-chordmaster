@@ -30,3 +30,12 @@ yt-dlp==2024.12.13
 python-dotenv==1.0.1
 requests==2.32.3
 starlette==0.41.3
+
+# Development and testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+httpx==0.28.1
+
+# Additional utilities
+typing-extensions==4.12.2
+alembic==1.14.0
